@@ -108,45 +108,4 @@ if response.status_code == 200:
                     article.get("title", "No Title")
                 )
 
-                source = article.get(
-                    "source_id",
-                    "Unknown Source"
-                )
-
-                published = article.get(
-                    "pubDate",
-                    ""
-                )
-
-                try:
-                    published = datetime.fromisoformat(
-                        published.replace("Z", "+00:00")
-                    ).strftime("%d %b %Y %H:%M")
-                except:
-                    pass
-
-                st.caption(
-                    f"📰 {source} | 📅 {published}"
-                )
-
-                st.write(
-                    article.get(
-                        "description",
-                        "No description available."
-                    )
-                )
-
-                if article.get("link"):
-                    st.link_button(
-                        "Read Full Article",
-                        article["link"]
-                    )
-
-            st.divider()
-
-else:
-    st.error(
-        f"Error fetching news: {response.status_code}"
-    )
-
-    st.write(response.text)
+                source = arti
