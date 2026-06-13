@@ -6,7 +6,7 @@ from datetime import datetime
 # CONFIG
 # -----------------------
 API_KEY = "pub_3c52ff1f0d5841cc978fe39d8a8f6972"
-BASE_URL = "https://newsapi.org/v2/top-headlines"
+BASE_URL = "https://newsdata.io/api/1/news"
 
 st.set_page_config(
     page_title="News Explorer",
@@ -35,19 +35,6 @@ country = st.sidebar.selectbox(
     list(countries.keys())
 )
 
-category = st.sidebar.selectbox(
-    "Select Category",
-    [
-        "general",
-        "business",
-        "entertainment",
-        "health",
-        "science",
-        "sports",
-        "technology"
-    ]
-)
-
 keyword = st.sidebar.text_input(
     "Search Keyword",
     placeholder="AI, Cricket, Tesla..."
@@ -72,10 +59,9 @@ st.markdown(
 # FETCH NEWS
 # -----------------------
 params = {
-    "apiKey": API_KEY,
+    "apikey": API_KEY,
     "country": countries[country],
-    "category": category,
-    "pageSize": article_count
+    "language": "en"
 }
 
 response = requests.get(BASE_URL, params=params)
@@ -83,7 +69,8 @@ response = requests.get(BASE_URL, params=params)
 if response.status_code == 200:
 
     data = response.json()
-    articles = data.get("articles", [])
+
+    articles = data.get("results", [])
 
     # Keyword Filter
     if keyword:
@@ -94,6 +81,8 @@ if response.status_code == 200:
                 (article.get("description") or "")
             ).lower()
         ]
+
+    articles = articles[:article_count]
 
     st.success(f"Found {len(articles)} articles")
 
@@ -107,28 +96,38 @@ if response.status_code == 200:
             col1, col2 = st.columns([1, 2])
 
             with col1:
-                if article.get("urlToImage"):
+                if article.get("image_url"):
                     st.image(
-                        article["urlToImage"],
+                        article["image_url"],
                         use_container_width=True
                     )
 
             with col2:
 
-                st.subheader(article.get("title", "No Title"))
+                st.subheader(
+                    article.get("title", "No Title")
+                )
 
-                source = article.get("source", {}).get("name", "Unknown Source")
-                published = article.get("publishedAt", "")
+                source = article.get(
+                    "source_id",
+                    "Unknown Source"
+                )
+
+                published = article.get(
+                    "pubDate",
+                    ""
+                )
 
                 try:
-                    published = datetime.strptime(
-                        published,
-                        "%Y-%m-%dT%H:%M:%SZ"
+                    published = datetime.fromisoformat(
+                        published.replace("Z", "+00:00")
                     ).strftime("%d %b %Y %H:%M")
                 except:
                     pass
 
-                st.caption(f"📰 {source} | 📅 {published}")
+                st.caption(
+                    f"📰 {source} | 📅 {published}"
+                )
 
                 st.write(
                     article.get(
@@ -137,10 +136,11 @@ if response.status_code == 200:
                     )
                 )
 
-                st.link_button(
-                    "Read Full Article",
-                    article["url"]
-                )
+                if article.get("link"):
+                    st.link_button(
+                        "Read Full Article",
+                        article["link"]
+                    )
 
             st.divider()
 
@@ -148,3 +148,5 @@ else:
     st.error(
         f"Error fetching news: {response.status_code}"
     )
+
+    st.write(response.text)
